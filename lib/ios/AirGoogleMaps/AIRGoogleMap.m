@@ -267,6 +267,7 @@ id regionAsJSON(MKCoordinateRegion region) {
 - (void)didChangeCameraPosition:(GMSCameraPosition *)position {
   id event = @{@"continuous": @YES,
                @"region": regionAsJSON([AIRGoogleMap makeGMSCameraPositionFromMap:self andGMSCameraPosition:position]),
+               @"zoom": [NSNumber numberWithFloat:self.camera.zoom],
                };
 
   if (self.onChange) self.onChange(event);
@@ -275,6 +276,7 @@ id regionAsJSON(MKCoordinateRegion region) {
 - (void)idleAtCameraPosition:(GMSCameraPosition *)position {
   id event = @{@"continuous": @NO,
                @"region": regionAsJSON([AIRGoogleMap makeGMSCameraPositionFromMap:self andGMSCameraPosition:position]),
+               @"zoom": [NSNumber numberWithFloat:self.camera.zoom],
                };
   if (self.onChange) self.onChange(event);  // complete
 }

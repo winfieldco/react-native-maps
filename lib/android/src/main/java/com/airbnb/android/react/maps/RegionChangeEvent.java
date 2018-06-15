@@ -11,10 +11,11 @@ public class RegionChangeEvent extends Event<RegionChangeEvent> {
   private final LatLngBounds bounds;
   private final boolean continuous;
 
-  public RegionChangeEvent(int id, LatLngBounds bounds, boolean continuous) {
+  public RegionChangeEvent(int id, LatLngBounds bounds, boolean continuous, float zoom) {
     super(id);
     this.bounds = bounds;
     this.continuous = continuous;
+    this.zoom = zoom;
   }
 
   @Override
@@ -32,6 +33,7 @@ public class RegionChangeEvent extends Event<RegionChangeEvent> {
 
     WritableMap event = new WritableNativeMap();
     event.putBoolean("continuous", continuous);
+    event.putFloat("zoom", zoom);
 
     WritableMap region = new WritableNativeMap();
     LatLng center = bounds.getCenter();
