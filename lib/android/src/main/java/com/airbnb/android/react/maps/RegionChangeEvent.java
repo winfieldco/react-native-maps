@@ -10,6 +10,7 @@ import com.google.android.gms.maps.model.LatLngBounds;
 public class RegionChangeEvent extends Event<RegionChangeEvent> {
   private final LatLngBounds bounds;
   private final boolean continuous;
+  private final float zoom;
 
   public RegionChangeEvent(int id, LatLngBounds bounds, boolean continuous, float zoom) {
     super(id);
@@ -33,7 +34,7 @@ public class RegionChangeEvent extends Event<RegionChangeEvent> {
 
     WritableMap event = new WritableNativeMap();
     event.putBoolean("continuous", continuous);
-    event.putFloat("zoom", zoom);
+    event.putDouble("zoom", zoom);
 
     WritableMap region = new WritableNativeMap();
     LatLng center = bounds.getCenter();
