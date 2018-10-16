@@ -15,9 +15,15 @@
 
 - (void)setUrlTemplate:(NSString *)urlTemplate
 {
-  _urlTemplate = urlTemplate;
+
+  NSError *error=nil;
+  NSDictionary *parsedUrlTemplate = [NSJSONSerialization JSONObjectWithData:[urlTemplate dataUsingEncoding:nil] options:kNilOptions error:&error];
+
+  NSNumber *tileSize = [parsedUrlTemplate objectForKey:@"tileSize"];
+    
+  _urlTemplate = [parsedUrlTemplate objectForKey:@"urlTemplate"];
   _tileLayer = [GMSURLTileLayer tileLayerWithURLConstructor:[self _getTileURLConstructor]];
-  _tileLayer.tileSize = [[UIScreen mainScreen] scale] * 256;
+  _tileLayer.tileSize = [[UIScreen mainScreen] scale] * [tileSize intValue];
 }
 
 - (GMSTileURLConstructor)_getTileURLConstructor

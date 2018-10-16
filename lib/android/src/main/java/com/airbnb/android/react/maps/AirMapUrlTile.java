@@ -10,6 +10,8 @@ import com.google.android.gms.maps.model.UrlTileProvider;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import org.json.JSONObject;
+
 public class AirMapUrlTile extends AirMapFeature {
 
   class AIRMapUrlTileProvider extends UrlTileProvider {
@@ -47,13 +49,27 @@ public class AirMapUrlTile extends AirMapFeature {
 
   private String urlTemplate;
   private float zIndex;
+  private int tileSize;
 
   public AirMapUrlTile(Context context) {
     super(context);
   }
 
   public void setUrlTemplate(String urlTemplate) {
-    this.urlTemplate = urlTemplate;
+
+    try {
+
+      JSONObject parsedUrlTemplate = new JSONObject(urlTemplate);
+
+      this.urlTemplate = parsedUrlTemplate.getString("urlTemplate");
+      this.tileSize = parsedUrlTemplate.getInt("tileSize");
+
+    } catch (Exception e) {
+
+      e.printStackTrace();
+
+    }
+
     if (tileProvider != null) {
       tileProvider.setUrlTemplate(urlTemplate);
     }
@@ -79,7 +95,7 @@ public class AirMapUrlTile extends AirMapFeature {
   private TileOverlayOptions createTileOverlayOptions() {
     TileOverlayOptions options = new TileOverlayOptions();
     options.zIndex(zIndex);
-    this.tileProvider = new AIRMapUrlTileProvider(256, 256, this.urlTemplate);
+    this.tileProvider = new AIRMapUrlTileProvider(this.tileSize, this.tileSize, this.urlTemplate);
     options.tileProvider(this.tileProvider);
     return options;
   }
