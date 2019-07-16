@@ -24,6 +24,7 @@ public class AirMapMarkerManager extends ViewGroupManager<AirMapMarker> {
   private static final int HIDE_INFO_WINDOW = 2;
   private static final int ANIMATE_MARKER_TO_COORDINATE = 3;
   private static final int REDRAW = 4;
+  private static final int UPDATE_OPACITY = 5;
 
   public AirMapMarkerManager() {
   }
@@ -96,6 +97,14 @@ public class AirMapMarkerManager extends ViewGroupManager<AirMapMarker> {
 //        view.setImage(image);
 //    }
 
+  @ReactProp(name = "imageSize")
+  public void setImageSize(AirMapMarker view, ReadableMap map) {
+    double width = map != null && map.hasKey("width") ? map.getDouble("width") : 0;
+    double height = map != null && map.hasKey("height") ? map.getDouble("height") : 0;
+    view.setImageSizeWidth(width);
+    view.setImageSizeHeight(height);
+  }
+
   @ReactProp(name = "pinColor", defaultInt = Color.RED, customType = "Color")
   public void setPinColor(AirMapMarker view, int pinColor) {
     float[] hsv = new float[3];
@@ -164,7 +173,8 @@ public class AirMapMarkerManager extends ViewGroupManager<AirMapMarker> {
         "showCallout", SHOW_INFO_WINDOW,
         "hideCallout", HIDE_INFO_WINDOW,
         "animateMarkerToCoordinate", ANIMATE_MARKER_TO_COORDINATE,
-        "redraw", REDRAW
+        "redraw", REDRAW,
+        "updateOpacity", UPDATE_OPACITY
     );
   }
 
@@ -195,6 +205,10 @@ public class AirMapMarkerManager extends ViewGroupManager<AirMapMarker> {
 
       case REDRAW:
         view.updateMarkerIcon();
+        break;
+
+      case UPDATE_OPACITY:
+        view.updateOpacity(args.getDouble(0));
         break;
     }
   }

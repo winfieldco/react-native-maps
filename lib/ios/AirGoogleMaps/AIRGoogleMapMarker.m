@@ -278,6 +278,43 @@ CGRect unionRect(CGRect a, CGRect b) {
                                                                }];
 }
 
+- (void)setIconSrc:(NSString *)iconSrc
+{
+
+  // Hide initially otherwise flashes with default icon
+  _realMarker.opacity = 0;
+  
+  _iconSrc = iconSrc;
+
+   if (_reloadImageCancellationBlock) {
+    _reloadImageCancellationBlock();
+    _reloadImageCancellationBlock = nil;
+  }
+
+   _reloadImageCancellationBlock =
+  [_bridge.imageLoader loadImageWithURLRequest:[RCTConvert NSURLRequest:_iconSrc]
+                                            size:_iconSize
+                                         scale:RCTScreenScale()
+                                       clipped:YES
+                                      resizeMode: RCTResizeModeContain
+                                 progressBlock:nil
+                              partialLoadBlock:nil
+                               completionBlock:^(NSError *error, UIImage *image) {
+                                 if (error) {
+                                   // TODO(lmr): do something with the error?
+                                   NSLog(@"%@", error);
+                                 }
+                                 dispatch_async(dispatch_get_main_queue(), ^{
+                                   _realMarker.icon = image;
+                                   _realMarker.opacity = 1;
+                                 });
+                               }];
+}
+
+- (void)setIconSize:(CGSize)iconSize {
+  _iconSize = iconSize;
+}
+
 - (void)setTitle:(NSString *)title {
   _realMarker.title = [title copy];
 }

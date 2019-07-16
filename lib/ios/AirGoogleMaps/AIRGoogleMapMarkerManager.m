@@ -33,6 +33,8 @@ RCT_EXPORT_VIEW_PROPERTY(coordinate, CLLocationCoordinate2D)
 RCT_EXPORT_VIEW_PROPERTY(rotation, CLLocationDegrees)
 RCT_EXPORT_VIEW_PROPERTY(onPress, RCTBubblingEventBlock)
 RCT_REMAP_VIEW_PROPERTY(image, imageSrc, NSString)
+RCT_REMAP_VIEW_PROPERTY(icon, iconSrc, NSString)
+RCT_EXPORT_VIEW_PROPERTY(iconSize, CGSize)
 RCT_EXPORT_VIEW_PROPERTY(title, NSString)
 RCT_REMAP_VIEW_PROPERTY(description, subtitle, NSString)
 RCT_EXPORT_VIEW_PROPERTY(pinColor, UIColor)
@@ -82,6 +84,19 @@ RCT_EXPORT_METHOD(redraw:(nonnull NSNumber *)reactTag)
     }
   }];
 }
+
+RCT_EXPORT_METHOD(updateOpacity:(nonnull NSNumber *)reactTag value:(nonnull NSNumber *)value)
+{
+  [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
+    id view = viewRegistry[reactTag];
+    if (![view isKindOfClass:[AIRGoogleMapMarker class]]) {
+      RCTLogError(@"Invalid view returned from registry, expecting AIRMap, got: %@", view);
+    } else {
+      [(AIRGoogleMapMarker *) view setOpacity:[value doubleValue]];
+    }
+  }];
+}
+
 @end
 
 #endif

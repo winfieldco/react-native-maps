@@ -80,6 +80,9 @@ public class AirMapMarker extends AirMapFeature {
 
   private boolean hasCustomMarkerView = false;
 
+  private double imageSizeWidth = 0;
+  private double imageSizeHeight = 0;
+
   private final DraweeHolder<?> logoHolder;
   private DataSource<CloseableReference<CloseableImage>> dataSource;
   private final ControllerListener<ImageInfo> mLogoControllerListener =
@@ -99,6 +102,12 @@ public class AirMapMarker extends AirMapFeature {
                 Bitmap bitmap = closeableStaticBitmap.getUnderlyingBitmap();
                 if (bitmap != null) {
                   bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+
+                  if(imageSizeWidth > 0 && imageSizeHeight > 0) {
+                    float screenDensity = context.getResources().getDisplayMetrics().density; // Multiply by the screen density
+                    bitmap = Bitmap.createScaledBitmap(bitmap, new Double(imageSizeWidth * screenDensity).intValue(), new Double(imageSizeHeight * screenDensity).intValue(), false);
+                  }
+
                   iconBitmap = bitmap;
                   iconBitmapDescriptor = BitmapDescriptorFactory.fromBitmap(bitmap);
                 }
@@ -278,6 +287,10 @@ public class AirMapMarker extends AirMapFeature {
     return true;
   }
 
+  public void updateOpacity(double opacity) {
+    marker.setAlpha(new Float(opacity));
+  }
+
   public void updateMarkerIcon() {
     if (!hasViewChanges) return;
 
@@ -310,6 +323,16 @@ public class AirMapMarker extends AirMapFeature {
       finalPosition);
     animator.setDuration(duration);
     animator.start();
+  }
+
+  public void setImageSizeWidth(double imageSizeWidth) {
+    hasViewChanges = true;
+    this.imageSizeWidth = imageSizeWidth;
+  }
+
+  public void setImageSizeHeight(double imageSizeHeight) {
+    hasViewChanges = true;
+    this.imageSizeHeight = imageSizeHeight;
   }
 
   public void setImage(String uri) {
