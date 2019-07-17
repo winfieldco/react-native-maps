@@ -291,6 +291,10 @@ public class AirMapMarker extends AirMapFeature {
     marker.setAlpha(new Float(opacity));
   }
 
+  public void updateRotation(double rotation) {
+    marker.setRotation(new Float(rotation));
+  }
+
   public void updateMarkerIcon() {
     if (!hasViewChanges) return;
 

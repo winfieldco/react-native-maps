@@ -25,6 +25,7 @@ public class AirMapMarkerManager extends ViewGroupManager<AirMapMarker> {
   private static final int ANIMATE_MARKER_TO_COORDINATE = 3;
   private static final int REDRAW = 4;
   private static final int UPDATE_OPACITY = 5;
+  private static final int UPDATE_ROTATION = 6;
 
   public AirMapMarkerManager() {
   }
@@ -174,7 +175,8 @@ public class AirMapMarkerManager extends ViewGroupManager<AirMapMarker> {
         "hideCallout", HIDE_INFO_WINDOW,
         "animateMarkerToCoordinate", ANIMATE_MARKER_TO_COORDINATE,
         "redraw", REDRAW,
-        "updateOpacity", UPDATE_OPACITY
+        "updateOpacity", UPDATE_OPACITY,
+        "updateRotation", UPDATE_ROTATION
     );
   }
 
@@ -210,6 +212,11 @@ public class AirMapMarkerManager extends ViewGroupManager<AirMapMarker> {
       case UPDATE_OPACITY:
         view.updateOpacity(args.getDouble(0));
         break;
+
+      case UPDATE_ROTATION:
+        view.updateRotation(args.getDouble(0));
+        break;
+
     }
   }
 

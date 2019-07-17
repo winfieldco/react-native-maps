@@ -97,6 +97,18 @@ RCT_EXPORT_METHOD(updateOpacity:(nonnull NSNumber *)reactTag value:(nonnull NSNu
   }];
 }
 
+RCT_EXPORT_METHOD(updateRotation:(nonnull NSNumber *)reactTag value:(nonnull NSNumber *)value)
+{
+  [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
+    id view = viewRegistry[reactTag];
+    if (![view isKindOfClass:[AIRGoogleMapMarker class]]) {
+      RCTLogError(@"Invalid view returned from registry, expecting AIRMap, got: %@", view);
+    } else {
+      [(AIRGoogleMapMarker *) view setRotation:[value doubleValue]];
+    }
+  }];
+}
+
 @end
 
 #endif
