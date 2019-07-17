@@ -329,14 +329,20 @@ public class AirMapMarker extends AirMapFeature {
     animator.start();
   }
 
-  public void setImageSizeWidth(double imageSizeWidth) {
-    hasViewChanges = true;
-    this.imageSizeWidth = imageSizeWidth;
-  }
+  public void setIcon(ReadableMap map) {
+    if(map != null) {
 
-  public void setImageSizeHeight(double imageSizeHeight) {
-    hasViewChanges = true;
-    this.imageSizeHeight = imageSizeHeight;
+      if(map.hasKey("size")) {
+        ReadableMap size = map.getMap("size");
+        this.imageSizeWidth = size.hasKey("width") ? size.getDouble("width") : 0;
+        this.imageSizeHeight = size.hasKey("height") ? size.getDouble("height") : 0;
+      }
+
+      if(map.hasKey("src")) {
+        setImage(map.getString("src"));
+      }
+
+    }
   }
 
   public void setImage(String uri) {

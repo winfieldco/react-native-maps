@@ -98,12 +98,9 @@ public class AirMapMarkerManager extends ViewGroupManager<AirMapMarker> {
 //        view.setImage(image);
 //    }
 
-  @ReactProp(name = "imageSize")
-  public void setImageSize(AirMapMarker view, ReadableMap map) {
-    double width = map != null && map.hasKey("width") ? map.getDouble("width") : 0;
-    double height = map != null && map.hasKey("height") ? map.getDouble("height") : 0;
-    view.setImageSizeWidth(width);
-    view.setImageSizeHeight(height);
+  @ReactProp(name = "icon")
+  public void setIcon(AirMapMarker view, ReadableMap map) {
+    view.setIcon(map);
   }
 
   @ReactProp(name = "pinColor", defaultInt = Color.RED, customType = "Color")

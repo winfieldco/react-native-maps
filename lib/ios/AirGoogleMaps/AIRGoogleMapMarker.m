@@ -278,22 +278,23 @@ CGRect unionRect(CGRect a, CGRect b) {
                                                                }];
 }
 
-- (void)setIconSrc:(NSString *)iconSrc
+- (void)setIcon:(NSDictionary *)icon
 {
+
+  NSString *iconSrc = [icon objectForKey:@"src"];
+  NSDictionary *iconSize = [icon objectForKey:@"size"];
 
   // Hide initially otherwise flashes with default icon
   _realMarker.opacity = 0;
   
-  _iconSrc = iconSrc;
-
    if (_reloadImageCancellationBlock) {
     _reloadImageCancellationBlock();
     _reloadImageCancellationBlock = nil;
   }
 
    _reloadImageCancellationBlock =
-  [_bridge.imageLoader loadImageWithURLRequest:[RCTConvert NSURLRequest:_iconSrc]
-                                            size:_iconSize
+  [_bridge.imageLoader loadImageWithURLRequest:[RCTConvert NSURLRequest:iconSrc]
+                                          size:CGSizeMake([[iconSize objectForKey:@"width"] floatValue], [[iconSize objectForKey:@"height"] floatValue])
                                          scale:RCTScreenScale()
                                        clipped:YES
                                       resizeMode: RCTResizeModeContain
@@ -309,10 +310,6 @@ CGRect unionRect(CGRect a, CGRect b) {
                                    _realMarker.opacity = 1;
                                  });
                                }];
-}
-
-- (void)setIconSize:(CGSize)iconSize {
-  _iconSize = iconSize;
 }
 
 - (void)setTitle:(NSString *)title {
