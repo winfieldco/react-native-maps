@@ -11,6 +11,7 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.MotionEventCompat;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -63,10 +64,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static android.support.v4.content.PermissionChecker.checkSelfPermission;
 
@@ -81,6 +84,8 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
   private Integer loadingBackgroundColor = null;
   private Integer loadingIndicatorColor = null;
   private final int baseMapPadding = 50;
+  private long layoutMarkersLastTime = new Date().getTime();
+  private ReentrantLock layoutMarkersLock = new ReentrantLock();
 
   private LatLngBounds boundsToMove;
   private boolean showUserLocation = false;
@@ -95,7 +100,7 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
       "android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_COARSE_LOCATION"};
 
   private final List<AirMapFeature> features = new ArrayList<>();
-  private final Map<Marker, AirMapMarker> markerMap = new HashMap<>();
+  private final Map<String, AirMapMarker> markerMap = new HashMap<>();
   private final Map<Polyline, AirMapPolyline> polylineMap = new HashMap<>();
   private final Map<Polygon, AirMapPolygon> polygonMap = new HashMap<>();
   private final GestureDetectorCompat gestureDetector;
@@ -324,6 +329,8 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
       public void onCameraMove() {
         LatLngBounds bounds = map.getProjection().getVisibleRegion().latLngBounds;
         cameraLastIdleBounds = null;
+        // XXX Disable currently otherwise on low memory phones will crash
+        // AirMapView.this.layoutMarkers(new Float(500), false);
         eventDispatcher.dispatchEvent(new RegionChangeEvent(getId(), bounds, true, map.getCameraPosition().zoom));
       }
     });
@@ -336,6 +343,7 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
           ((cameraLastIdleBounds == null) ||
             LatLngBoundsUtils.BoundsAreDifferent(bounds, cameraLastIdleBounds))) {
           cameraLastIdleBounds = bounds;
+          AirMapView.this.layoutMarkers(null, true);
           eventDispatcher.dispatchEvent(new RegionChangeEvent(getId(), bounds, false, map.getCameraPosition().zoom));
         }
       }
@@ -397,7 +405,6 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
     return checkSelfPermission(getContext(), PERMISSIONS[0]) == PackageManager.PERMISSION_GRANTED ||
         checkSelfPermission(getContext(), PERMISSIONS[1]) == PackageManager.PERMISSION_GRANTED;
   }
-
 
   /*
   onDestroy is final method so I can't override it.
@@ -535,7 +542,13 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
     // This is where we intercept them and do the appropriate underlying mapview action.
     if (child instanceof AirMapMarker) {
       AirMapMarker annotation = (AirMapMarker) child;
-      annotation.addToMap(map);
+
+      // To reduce memory usage, only add marker to map if it is visible
+      LatLngBounds bounds = map.getProjection().getVisibleRegion().latLngBounds;
+      if(annotation.getHidesOffScreen() == false || bounds.contains(annotation.getMarkerOptions().getPosition())) {
+        annotation.addToMap(map);
+      }
+
       features.add(index, annotation);
 
       // Allow visibility event to be triggered later
@@ -543,7 +556,8 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
       annotation.setVisibility(INVISIBLE);
 
       // Add to the parent group
-      attacherGroup.addView(annotation);
+      // Unsure what this used to do, removing for performance
+      // attacherGroup.addView(annotation);
 
       // Trigger visibility event if necessary.
       // With some testing, seems like it is not always
@@ -551,7 +565,7 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
       annotation.setVisibility(visibility);
 
       Marker marker = (Marker) annotation.getFeature();
-      markerMap.put(marker, annotation);
+      markerMap.put(annotation.getIdentifier(), annotation);
     } else if (child instanceof AirMapPolyline) {
       AirMapPolyline polylineView = (AirMapPolyline) child;
       polylineView.addToMap(map);
@@ -601,7 +615,7 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
   public void removeFeatureAt(int index) {
     AirMapFeature feature = features.remove(index);
     if (feature instanceof AirMapMarker) {
-      markerMap.remove(feature.getFeature());
+      markerMap.remove(((AirMapMarker) feature).getIdentifier());
     }
     feature.removeFromMap(map);
   }
@@ -958,6 +972,47 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
     }
   }
 
+  /**
+   * Layout the markers by hiding/showing them on the map. This improves performance
+   * dramatically by only showing markers that are in the visible area, hiding those
+   * that are not. You can control how often the markers update based on the throttle
+   * and allow to skip waiting if another thread is currently laying out the markers.
+   *
+   * @param throttle Time in ms to wait before laying out markers, a debounce basically.
+   * @param shouldWait Markers may only be laid out one at a time, if another thread tries concurrently, it can either wait its turn or skip altogether.
+   */
+  private void layoutMarkers(Float throttle, boolean shouldWait) {
+
+    if(layoutMarkersLock.isLocked() == false || shouldWait == true) {
+
+      layoutMarkersLock.lock();
+
+      LatLngBounds bounds = map.getProjection().getVisibleRegion().latLngBounds;
+
+      long currentTime = new Date().getTime();
+
+      // Only perform the layout if the given amount of time has elapsed
+      if (throttle == null || currentTime - layoutMarkersLastTime > throttle.floatValue()) {
+        for (AirMapMarker annotation : markerMap.values()) {
+          if(annotation.getHidesOffScreen() == true) {
+            if (bounds.contains(annotation.getMarkerOptions().getPosition()) == true) {
+              annotation.addToMap(map);
+            } else {
+              annotation.removeFromMap(map);
+            }
+          }
+        }
+
+        layoutMarkersLastTime = currentTime;
+
+      }
+
+      layoutMarkersLock.unlock();
+
+    }
+
+  }
+
   public void onPanDrag(MotionEvent ev) {
     Point point = new Point((int) ev.getX(), (int) ev.getY());
     LatLng coords = this.map.getProjection().fromScreenLocation(point);
@@ -1129,20 +1184,10 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
   }
 
   private AirMapMarker getMarkerMap(Marker marker) {
-    AirMapMarker airMarker = markerMap.get(marker);
 
-    if (airMarker != null) {
-      return airMarker;
-    }
-
-    for (Map.Entry<Marker, AirMapMarker> entryMarker : markerMap.entrySet()) {
-      if (entryMarker.getKey().getPosition().equals(marker.getPosition())
-          && entryMarker.getKey().getTitle().equals(marker.getTitle())) {
-        airMarker = entryMarker.getValue();
-        break;
-      }
-    }
-
+    // XXX identifier is stored on the snippet
+    AirMapMarker airMarker = markerMap.get(marker.getSnippet());
     return airMarker;
+
   }
 }

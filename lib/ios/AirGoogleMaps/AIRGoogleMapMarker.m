@@ -284,9 +284,6 @@ CGRect unionRect(CGRect a, CGRect b) {
   NSString *iconSrc = [icon objectForKey:@"src"];
   NSDictionary *iconSize = [icon objectForKey:@"size"];
 
-  // Hide initially otherwise flashes with default icon
-  _realMarker.opacity = 0;
-  
    if (_reloadImageCancellationBlock) {
     _reloadImageCancellationBlock();
     _reloadImageCancellationBlock = nil;
@@ -307,7 +304,6 @@ CGRect unionRect(CGRect a, CGRect b) {
                                  }
                                  dispatch_async(dispatch_get_main_queue(), ^{
                                    _realMarker.icon = image;
-                                   _realMarker.opacity = 1;
                                  });
                                }];
 }

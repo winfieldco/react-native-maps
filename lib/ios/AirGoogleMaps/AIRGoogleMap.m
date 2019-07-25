@@ -116,7 +116,13 @@ id regionAsJSON(MKCoordinateRegion region) {
   // This is where we intercept them and do the appropriate underlying mapview action.
   if ([subview isKindOfClass:[AIRGoogleMapMarker class]]) {
     AIRGoogleMapMarker *marker = (AIRGoogleMapMarker*)subview;
-    marker.realMarker.map = self;
+    
+    // To reduce memory usage, only add marker to map if it is visible
+    GMSCoordinateBounds *bounds = [[GMSCoordinateBounds alloc]initWithRegion:[self.projection visibleRegion]];
+    if([bounds containsCoordinate:marker.coordinate] || [marker hidesOffScreen] == false) {
+      marker.realMarker.map = self;
+    }
+    
     [self.markers addObject:marker];
   } else if ([subview isKindOfClass:[AIRGoogleMapPolygon class]]) {
     AIRGoogleMapPolygon *polygon = (AIRGoogleMapPolygon*)subview;
@@ -284,6 +290,7 @@ id regionAsJSON(MKCoordinateRegion region) {
                @"zoom": [NSNumber numberWithFloat:self.camera.zoom],
                };
 
+  [self layoutMarkers];
   if (self.onChange) self.onChange(event);
 }
 
@@ -306,7 +313,26 @@ id regionAsJSON(MKCoordinateRegion region) {
                @"region": regionAsJSON([AIRGoogleMap makeGMSCameraPositionFromMap:self andGMSCameraPosition:position]),
                @"zoom": [NSNumber numberWithFloat:self.camera.zoom],
                };
+  
+  [self layoutMarkers];
   if (self.onChange) self.onChange(event);  // complete
+}
+
+- (void)layoutMarkers {
+
+  // To reduce memory usage, only show the marker if its within the visible bounds
+  GMSCoordinateBounds *bounds = [[GMSCoordinateBounds alloc]initWithRegion:[self.projection visibleRegion]];
+  for(AIRGoogleMapMarker *marker in self.markers) {
+    if([marker hidesOffScreen] == true) {
+      if([bounds containsCoordinate:marker.coordinate] == true) {
+        marker.realMarker.map = self;
+      }
+      else {
+        marker.realMarker.map = nil;
+      }
+    }
+  }
+
 }
 
 - (void)setMapPadding:(UIEdgeInsets)mapPadding {

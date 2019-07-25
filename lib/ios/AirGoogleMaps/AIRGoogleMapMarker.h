@@ -36,6 +36,7 @@
 @property (nonatomic, assign) BOOL draggable;
 @property (nonatomic, assign) BOOL tracksViewChanges;
 @property (nonatomic, assign) BOOL tracksInfoWindowChanges;
+@property (nonatomic, assign) BOOL hidesOffScreen;
 
 - (void)showCalloutView;
 - (void)hideCalloutView;

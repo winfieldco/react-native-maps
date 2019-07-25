@@ -77,6 +77,7 @@ public class AirMapMarker extends AirMapFeature {
   private boolean tracksViewChanges = true;
   private boolean tracksViewChangesActive = false;
   private boolean hasViewChanges = true;
+  private boolean hidesOffScreen = false;
 
   private boolean hasCustomMarkerView = false;
 
@@ -259,6 +260,14 @@ public class AirMapMarker extends AirMapFeature {
     updateTracksViewChanges();
   }
 
+  public void setHidesOffScreen(boolean hidesOffScreen) {
+    this.hidesOffScreen = hidesOffScreen;
+  }
+
+  public boolean getHidesOffScreen() {
+    return this.hidesOffScreen;
+  }
+
   private void updateTracksViewChanges() {
     boolean shouldTrack = tracksViewChanges && hasCustomMarkerView && marker != null;
     if (shouldTrack == tracksViewChangesActive) return;
@@ -423,15 +432,19 @@ public class AirMapMarker extends AirMapFeature {
 
   @Override
   public void addToMap(GoogleMap map) {
-    marker = map.addMarker(getMarkerOptions());
-    updateTracksViewChanges();
+    if(marker == null) {
+      marker = map.addMarker(getMarkerOptions());
+      updateTracksViewChanges();
+    }
   }
 
   @Override
   public void removeFromMap(GoogleMap map) {
-    marker.remove();
-    marker = null;
-    updateTracksViewChanges();
+    if(marker != null) {
+      marker.remove();
+      marker = null;
+      updateTracksViewChanges();
+    }
   }
 
   private BitmapDescriptor getIcon() {
@@ -463,7 +476,7 @@ public class AirMapMarker extends AirMapFeature {
     if (anchorIsSet) options.anchor(anchorX, anchorY);
     if (calloutAnchorIsSet) options.infoWindowAnchor(calloutAnchorX, calloutAnchorY);
     options.title(title);
-    options.snippet(snippet);
+    options.snippet(identifier); // XXX store the identifier in the snippet as it won't be used anyway, need to detect clicks to map back to the AirMapMarker
     options.rotation(rotation);
     options.flat(flat);
     options.draggable(draggable);

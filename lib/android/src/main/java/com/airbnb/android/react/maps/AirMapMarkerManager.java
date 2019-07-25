@@ -146,6 +146,11 @@ public class AirMapMarkerManager extends ViewGroupManager<AirMapMarker> {
     view.setTracksViewChanges(tracksViewChanges);
   }
 
+  @ReactProp(name = "hidesOffScreen", defaultBoolean = false)
+  public void setHidesOffScreen(AirMapMarker view, boolean hidesOffScreen) {
+    view.setHidesOffScreen(hidesOffScreen);
+  }
+
   @Override
   public void addView(AirMapMarker parent, View child, int index) {
     // if an <Callout /> component is a child, then it is a callout view, NOT part of the
