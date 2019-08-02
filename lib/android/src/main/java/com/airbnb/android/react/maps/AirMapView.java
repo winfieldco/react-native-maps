@@ -556,8 +556,7 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
       annotation.setVisibility(INVISIBLE);
 
       // Add to the parent group
-      // Unsure what this used to do, removing for performance
-      // attacherGroup.addView(annotation);
+      attacherGroup.addView(annotation);
 
       // Trigger visibility event if necessary.
       // With some testing, seems like it is not always
