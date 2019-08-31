@@ -1155,7 +1155,15 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
   
   @Override
   public void onIndoorLevelActivated(IndoorBuilding building) {
+
+    // Fix for https://github.com/react-native-community/react-native-maps/pull/2598
+    if (building == null) {
+      return;
+    }
     int activeLevelIndex = building.getActiveLevelIndex();
+    if (activeLevelIndex < 0 || activeLevelIndex >= building.getLevels().size()) {
+      return;
+    }
     IndoorLevel level = building.getLevels().get(activeLevelIndex);
 
     WritableMap event = Arguments.createMap();
