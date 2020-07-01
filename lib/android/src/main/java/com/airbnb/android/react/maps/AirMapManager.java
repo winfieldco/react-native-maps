@@ -94,6 +94,16 @@ public class AirMapManager extends ViewGroupManager<AirMapView> {
     view.map.setMapType(typeId);
   }
 
+  @ReactProp(name = "logoHeight")
+  public void setLogoHeight(AirMapView view, float logoHeight) {
+    view.setLogoHeight(logoHeight);
+  }
+
+  @ReactProp(name = "showsLogo", defaultBoolean = true)
+  public void setShowsLogo(AirMapView view, boolean showsLogo) {
+    view.setShowsLogo(showsLogo);
+  }
+
   @ReactProp(name = "customMapStyleString")
   public void setMapStyle(AirMapView view, @Nullable String customMapStyleString) {
     view.map.setMapStyle(new MapStyleOptions(customMapStyleString));

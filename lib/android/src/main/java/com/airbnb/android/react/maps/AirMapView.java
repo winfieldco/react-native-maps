@@ -96,6 +96,10 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
   private LatLngBounds cameraLastIdleBounds;
   private int cameraMoveReason = 0;
 
+  private boolean showsLogo = true;
+  private float logoHeight = 0;
+  private LatLngBounds mapBoundaries;
+
   private static final String[] PERMISSIONS = new String[]{
       "android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_COARSE_LOCATION"};
 
@@ -327,6 +331,8 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
     map.setOnCameraMoveListener(new GoogleMap.OnCameraMoveListener() {
       @Override
       public void onCameraMove() {
+
+
         LatLngBounds bounds = map.getProjection().getVisibleRegion().latLngBounds;
         cameraLastIdleBounds = null;
         // XXX Disable currently otherwise on low memory phones will crash
@@ -342,6 +348,69 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
         if ((cameraMoveReason != 0) &&
           ((cameraLastIdleBounds == null) ||
             LatLngBoundsUtils.BoundsAreDifferent(bounds, cameraLastIdleBounds))) {
+
+          int mapVisibleHeight = getHeight() - (showsLogo == false ? (int)logoHeight : 0);
+
+          // If the user attempts go outside the defined bounds, will snap back, we must do
+          // this after the camera stops moving rather than dynamically as they move due to
+          // performance in Android
+          Point mapTopLeftPoint = new Point(0, 0);
+          Point mapBottomRightPoint = new Point(getWidth(), mapVisibleHeight);
+          LatLng mapTopLeftCoord = map.getProjection().fromScreenLocation(mapTopLeftPoint);
+          LatLng mapBottomRightCoord = map.getProjection().fromScreenLocation(mapBottomRightPoint);
+
+          Point boundsTopLeftPoint = new Point(map.getProjection().toScreenLocation(mapBoundaries.southwest).x, map.getProjection().toScreenLocation(mapBoundaries.northeast).y);
+          Point boundsBottomRightPoint = new Point(map.getProjection().toScreenLocation(mapBoundaries.northeast).x, map.getProjection().toScreenLocation(mapBoundaries.southwest).y);
+
+          double latitude = map.getCameraPosition().target.latitude;
+          double longitude = map.getCameraPosition().target.longitude;
+
+          Boolean resetBounds = false;
+
+          // Top
+          if (mapTopLeftCoord.latitude > mapBoundaries.northeast.latitude) {
+            resetBounds = true;
+            latitude = map.getProjection().fromScreenLocation(new Point(0, boundsTopLeftPoint.y + getHeight()/2)).latitude;
+          }
+          // Left
+          if (mapTopLeftCoord.longitude < mapBoundaries.southwest.longitude) {
+            resetBounds = true;
+            longitude = map.getProjection().fromScreenLocation(new Point(boundsTopLeftPoint.x + getWidth()/2, 0)).longitude;
+          }
+          // Bottom
+          if (mapBoundaries.southwest.latitude > mapBottomRightCoord.latitude) {
+            resetBounds = true;
+            latitude = map.getProjection().fromScreenLocation(new Point(0, boundsBottomRightPoint.y - getHeight()/2)).latitude;
+          }
+          // Right
+          if (mapBoundaries.northeast.longitude < mapBottomRightCoord.longitude) {
+            resetBounds = true;
+            longitude = map.getProjection().fromScreenLocation(new Point(boundsBottomRightPoint.x - getWidth()/2, 0)).longitude;
+          }
+
+          LatLng targetCoord = new LatLng(latitude, longitude);
+
+          // Specific to Android, if resetting bounds will cause the map to still be out of bounds,
+          // do not do anything to prevent an infinite loop
+          if(resetBounds == true) {
+
+            Point targetPoint = map.getProjection().toScreenLocation(targetCoord);
+            Point targetTopLeftPoint = new Point(targetPoint.x - getWidth() / 2, targetPoint.y - mapVisibleHeight / 2);
+            Point targetBottomRightPoint = new Point(targetPoint.x + getWidth() / 2, targetPoint.y + mapVisibleHeight / 2);
+
+            if (targetTopLeftPoint.y < boundsTopLeftPoint.y) {
+              resetBounds = false;
+            }
+            if (targetBottomRightPoint.y > boundsBottomRightPoint.y) {
+              resetBounds = false;
+            }
+
+          }
+
+          if(resetBounds == true) {
+            map.animateCamera(CameraUpdateFactory.newLatLng(targetCoord), 300, null);
+          }
+
           cameraLastIdleBounds = bounds;
           AirMapView.this.layoutMarkers(null, true);
           eventDispatcher.dispatchEvent(new RegionChangeEvent(getId(), bounds, false, map.getCameraPosition().zoom));
@@ -455,6 +524,14 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
       map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 0));
       boundsToMove = null;
     }
+  }
+
+  public void setLogoHeight(float logoHeight) {
+    this.logoHeight = logoHeight;
+  }
+
+  public void setShowsLogo(boolean showsLogo) {
+    this.showsLogo = showsLogo;
   }
 
   public void setShowsUserLocation(boolean showUserLocation) {
@@ -807,6 +884,8 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
     builder.include(new LatLng(latSW, lngSW));
 
     LatLngBounds bounds = builder.build();
+
+    this.mapBoundaries = bounds;
 
     map.setLatLngBoundsForCameraTarget(bounds);
   }

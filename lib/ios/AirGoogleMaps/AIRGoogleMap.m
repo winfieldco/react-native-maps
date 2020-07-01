@@ -36,7 +36,6 @@
 } while (0)
 #endif
 
-
 id regionAsJSON(MKCoordinateRegion region) {
   return @{
            @"latitude": [NSNumber numberWithDouble:region.center.latitude],
@@ -45,6 +44,7 @@ id regionAsJSON(MKCoordinateRegion region) {
            @"longitudeDelta": [NSNumber numberWithDouble:region.span.longitudeDelta],
            };
 }
+
 
 @interface AIRGoogleMap ()
 
@@ -285,6 +285,47 @@ id regionAsJSON(MKCoordinateRegion region) {
 }
 
 - (void)didChangeCameraPosition:(GMSCameraPosition *)position {
+
+  // If the user attempts go outside the defined bounds, will snap back
+  // idea modified from here https://stackoverflow.com/questions/21194769/how-do-i-prevent-gmsmapview-from-infinite-horizontal-scrolling
+  CGPoint mapTopLeftPoint = CGPointMake(0, 0);
+  CGPoint mapBottomRightPoint = CGPointMake(self.bounds.size.width, self.bounds.size.height - (self.showsLogo == false ? self.logoHeight : 0)); // Offset for the logo hiding
+  CLLocationCoordinate2D mapTopLeftCoord = [self.projection coordinateForPoint:mapTopLeftPoint];
+  CLLocationCoordinate2D mapBottomRightCoord = [self.projection coordinateForPoint:mapBottomRightPoint];
+
+  CGPoint boundsTopLeftPoint = CGPointMake([self.projection pointForCoordinate:self.cameraTargetBounds.southWest].x, [self.projection pointForCoordinate:self.cameraTargetBounds.northEast].y);
+  CGPoint boundsBottomRightPoint = CGPointMake([self.projection pointForCoordinate:self.cameraTargetBounds.northEast].x, [self.projection pointForCoordinate:self.cameraTargetBounds.southWest].y);
+  
+  CLLocationDegrees latitude = position.target.latitude;
+  CLLocationDegrees longitude = position.target.longitude;
+  
+  BOOL resetBounds = false;
+
+  // Top
+  if (mapTopLeftCoord.latitude > self.cameraTargetBounds.northEast.latitude) {
+    resetBounds = true;
+    latitude = [self.projection coordinateForPoint:CGPointMake(0, boundsTopLeftPoint.y + self.bounds.size.height/2)].latitude;
+  }
+  // Left
+  if (mapTopLeftCoord.longitude < self.cameraTargetBounds.southWest.longitude) {
+    resetBounds = true;
+    longitude = [self.projection coordinateForPoint:CGPointMake(boundsTopLeftPoint.x + self.bounds.size.width/2, 0)].longitude;
+  }
+  // Bottom
+  if (self.cameraTargetBounds.southWest.latitude > mapBottomRightCoord.latitude) {
+    resetBounds = true;
+    latitude = [self.projection coordinateForPoint:CGPointMake(0, boundsBottomRightPoint.y - self.bounds.size.height/2)].latitude;
+  }
+  // Right
+  if (self.cameraTargetBounds.northEast.longitude < mapBottomRightCoord.longitude) {
+    resetBounds = true;
+    longitude = [self.projection coordinateForPoint:CGPointMake(boundsBottomRightPoint.x - self.bounds.size.width/2, 0)].longitude;
+  }
+  
+  if(resetBounds == true) {
+    [self animateToLocation:CLLocationCoordinate2DMake(latitude, longitude)];
+  }
+
   id event = @{@"continuous": @YES,
                @"region": regionAsJSON([AIRGoogleMap makeGMSCameraPositionFromMap:self andGMSCameraPosition:position]),
                @"zoom": [NSNumber numberWithFloat:self.camera.zoom],

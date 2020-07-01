@@ -46,6 +46,8 @@
 @property (nonatomic, assign) BOOL showsBuildings;
 @property (nonatomic, assign) BOOL showsTraffic;
 @property (nonatomic, assign) BOOL showsCompass;
+@property (nonatomic, assign) BOOL showsLogo;
+@property (nonatomic, assign) CGFloat logoHeight;
 @property (nonatomic, assign) BOOL scrollEnabled;
 @property (nonatomic, assign) BOOL zoomEnabled;
 @property (nonatomic, assign) BOOL rotateEnabled;
