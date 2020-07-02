@@ -45,6 +45,26 @@ id regionAsJSON(MKCoordinateRegion region) {
            };
 }
 
+@implementation AirGoogleMapColorTileLayer
+
+- (UIImage *)tileForX:(NSUInteger)x y:(NSUInteger)y zoom:(NSUInteger)zoom {
+  return _image;
+}
+
+- (void)setColor:(UIColor *)color {
+
+  CGRect rect = CGRectMake(0, 0, 256, 256);
+  UIGraphicsBeginImageContext(rect.size);
+  CGContextRef context = UIGraphicsGetCurrentContext();
+  CGContextSetFillColorWithColor(context, [color CGColor]);
+  CGContextFillRect(context, rect);
+  UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+  UIGraphicsEndImageContext();
+  _image = image;
+  
+}
+
+@end
 
 @interface AIRGoogleMap ()
 
@@ -83,6 +103,11 @@ id regionAsJSON(MKCoordinateRegion region) {
            forKeyPath:@"myLocation"
               options:NSKeyValueObservingOptionNew
               context:NULL];
+                            
+    _mapBackgroundColorTileLayer = [[AirGoogleMapColorTileLayer alloc] init];
+    _mapBackgroundColorTileLayer.fadeIn = false;
+    _mapBackgroundColorTileLayer.map = self;
+
   }
   return self;
 }
@@ -446,6 +471,10 @@ id regionAsJSON(MKCoordinateRegion region) {
 
 - (BOOL)pitchEnabled {
   return self.settings.tiltGestures;
+}
+
+- (void)setMapBackgroundColor:(UIColor *)mapBackgroundColor {
+  [_mapBackgroundColorTileLayer setColor:mapBackgroundColor];
 }
 
 - (void)setShowsTraffic:(BOOL)showsTraffic {

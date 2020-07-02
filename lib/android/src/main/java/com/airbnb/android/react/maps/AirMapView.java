@@ -4,7 +4,9 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
@@ -50,6 +52,9 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PointOfInterest;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.Tile;
+import com.google.android.gms.maps.model.TileOverlayOptions;
+import com.google.android.gms.maps.model.TileProvider;
 import com.google.android.gms.maps.model.VisibleRegion;
 import com.google.android.gms.maps.model.IndoorBuilding;
 import com.google.android.gms.maps.model.IndoorLevel;
@@ -60,8 +65,10 @@ import com.google.maps.android.data.kml.KmlStyle;
 
 import org.xmlpull.v1.XmlPullParserException;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -75,6 +82,32 @@ import static android.support.v4.content.PermissionChecker.checkSelfPermission;
 
 public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
     GoogleMap.OnMarkerDragListener, OnMapReadyCallback, GoogleMap.OnPoiClickListener, GoogleMap.OnIndoorStateChangeListener {
+
+  private class ColorTileLayer implements TileProvider {
+
+    private Tile tile = null;
+
+    @Override
+    public Tile getTile(int x, int y, int zoom) {
+      return tile == null ? TileProvider.NO_TILE : tile;
+    }
+
+    public void setColor(Integer color) {
+
+      Rect rect = new Rect(0, 0, 256, 256);
+      Bitmap image = Bitmap.createBitmap(rect.width(), rect.height(), Bitmap.Config.ARGB_8888);
+      image.eraseColor(color);
+
+      ByteArrayOutputStream stream = new ByteArrayOutputStream();
+      image.compress(Bitmap.CompressFormat.PNG, 100, stream);
+      byte[] byteArray = stream.toByteArray();
+
+      tile = new Tile(256, 256, byteArray);
+
+    }
+  }
+
+  private ColorTileLayer mapBackgroundColorTileLayer = new ColorTileLayer();
   public GoogleMap map;
   private KmlLayer kmlLayer;
   private ProgressBar mapLoadingProgressBar;
@@ -197,6 +230,7 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
     attacherLayoutParams.topMargin = 99999999;
     attacherGroup.setLayoutParams(attacherLayoutParams);
     addView(attacherGroup);
+
   }
 
   @Override
@@ -209,6 +243,8 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
     this.map.setOnMarkerDragListener(this);
     this.map.setOnPoiClickListener(this);
     this.map.setOnIndoorStateChangeListener(this);
+
+    this.map.addTileOverlay(new TileOverlayOptions().fadeIn(false).zIndex(-1).tileProvider(mapBackgroundColorTileLayer));
 
     manager.pushEvent(context, this, "onMapReady", new WritableNativeMap());
 
@@ -567,6 +603,10 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
 
   public void setMoveOnMarkerPress(boolean moveOnPress) {
     this.moveOnMarkerPress = moveOnPress;
+  }
+
+  public void setMapBackgroundColor(Integer mapBackgroundColor) {
+    this.mapBackgroundColorTileLayer.setColor(mapBackgroundColor);
   }
 
   public void setLoadingBackgroundColor(Integer loadingBackgroundColor) {

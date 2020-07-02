@@ -58,6 +58,7 @@ RCT_EXPORT_VIEW_PROPERTY(region, MKCoordinateRegion)
 RCT_EXPORT_VIEW_PROPERTY(showsBuildings, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(showsLogo, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(logoHeight, CGFloat)
+RCT_EXPORT_VIEW_PROPERTY(mapBackgroundColor, UIColor)
 RCT_EXPORT_VIEW_PROPERTY(showsCompass, BOOL)
 //RCT_EXPORT_VIEW_PROPERTY(showsScale, BOOL)  // Not supported by GoogleMaps
 RCT_EXPORT_VIEW_PROPERTY(showsTraffic, BOOL)
