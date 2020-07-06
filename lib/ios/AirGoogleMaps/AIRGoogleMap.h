@@ -15,14 +15,6 @@
 #import "AIRGMSMarker.h"
 #import "RCTConvert+AirMap.h"
 
-@interface AirGoogleMapColorTileLayer : GMSSyncTileLayer
-
-@property (nonatomic, strong) UIImage *image;
-  
-- (void)setColor:(UIColor *)color;
-  
-@end
-
 @interface AIRGoogleMap : GMSMapView
 
 // TODO: don't use MK region?
@@ -50,7 +42,6 @@
 @property (nonatomic, strong) NSMutableArray *circles;
 @property (nonatomic, strong) NSMutableArray *tiles;
 @property (nonatomic, strong) NSMutableArray *overlays;
-@property (nonatomic, strong) AirGoogleMapColorTileLayer *mapBackgroundColorTileLayer;
 
 @property (nonatomic, assign) BOOL showsBuildings;
 @property (nonatomic, assign) BOOL showsTraffic;

@@ -104,11 +104,6 @@ public class AirMapManager extends ViewGroupManager<AirMapView> {
     view.setShowsLogo(showsLogo);
   }
 
-  @ReactProp(name = "mapBackgroundColor", customType = "Color")
-  public void setMapBackgroundColor(AirMapView view, @Nullable Integer mapBackgroundColor) {
-    view.setMapBackgroundColor(mapBackgroundColor);
-  }
-
   @ReactProp(name = "customMapStyleString")
   public void setMapStyle(AirMapView view, @Nullable String customMapStyleString) {
     view.map.setMapStyle(new MapStyleOptions(customMapStyleString));
