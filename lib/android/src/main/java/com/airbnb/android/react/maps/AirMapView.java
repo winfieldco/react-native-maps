@@ -392,7 +392,7 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
 
           LatLng targetCoord = new LatLng(latitude, longitude);
 
-          // Specific to Android, if resetting bounds will cause the map to still be out of bounds,
+          // If resetting bounds will cause the map to still be out of bounds,
           // do not do anything to prevent an infinite loop
           if(resetBounds == true) {
 

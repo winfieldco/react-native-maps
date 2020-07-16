@@ -286,10 +286,12 @@ id regionAsJSON(MKCoordinateRegion region) {
 
 - (void)didChangeCameraPosition:(GMSCameraPosition *)position {
 
+  CGFloat mapVisibleHeight = self.bounds.size.height - (self.showsLogo == false ? self.logoHeight : 0); // Offset for the logo hiding
+
   // If the user attempts go outside the defined bounds, will snap back
   // idea modified from here https://stackoverflow.com/questions/21194769/how-do-i-prevent-gmsmapview-from-infinite-horizontal-scrolling
   CGPoint mapTopLeftPoint = CGPointMake(0, 0);
-  CGPoint mapBottomRightPoint = CGPointMake(self.bounds.size.width, self.bounds.size.height - (self.showsLogo == false ? self.logoHeight : 0)); // Offset for the logo hiding
+  CGPoint mapBottomRightPoint = CGPointMake(self.bounds.size.width, mapVisibleHeight);
   CLLocationCoordinate2D mapTopLeftCoord = [self.projection coordinateForPoint:mapTopLeftPoint];
   CLLocationCoordinate2D mapBottomRightCoord = [self.projection coordinateForPoint:mapBottomRightPoint];
 
@@ -320,6 +322,23 @@ id regionAsJSON(MKCoordinateRegion region) {
   if (self.cameraTargetBounds.northEast.longitude < mapBottomRightCoord.longitude) {
     resetBounds = true;
     longitude = [self.projection coordinateForPoint:CGPointMake(boundsBottomRightPoint.x - self.bounds.size.width/2, 0)].longitude;
+  }
+  
+  CLLocationCoordinate2D targetCoord = CLLocationCoordinate2DMake(latitude, longitude);
+
+  // If resetting bounds will cause the map to still be out of bounds,
+  // do not do anything to prevent an infinite loop
+  if(resetBounds == true) {
+    CGPoint targetPoint = [self.projection pointForCoordinate:targetCoord];
+    CGPoint targetTopLeftPoint = CGPointMake(targetPoint.x - self.bounds.size.width / 2, targetPoint.y - mapVisibleHeight / 2);
+    CGPoint targetBottomRightPoint = CGPointMake(targetPoint.x + self.bounds.size.width / 2, targetPoint.y + mapVisibleHeight / 2);
+
+    if (targetTopLeftPoint.y < boundsTopLeftPoint.y) {
+      resetBounds = false;
+    }
+    if (targetBottomRightPoint.y > boundsBottomRightPoint.y) {
+      resetBounds = false;
+    }
   }
   
   if(resetBounds == true) {
