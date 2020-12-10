@@ -116,13 +116,13 @@ id regionAsJSON(MKCoordinateRegion region) {
   // This is where we intercept them and do the appropriate underlying mapview action.
   if ([subview isKindOfClass:[AIRGoogleMapMarker class]]) {
     AIRGoogleMapMarker *marker = (AIRGoogleMapMarker*)subview;
-    
+
     // To reduce memory usage, only add marker to map if it is visible
     GMSCoordinateBounds *bounds = [[GMSCoordinateBounds alloc]initWithRegion:[self.projection visibleRegion]];
     if([bounds containsCoordinate:marker.coordinate] || [marker hidesOffScreen] == false) {
       marker.realMarker.map = self;
     }
-    
+
     [self.markers addObject:marker];
   } else if ([subview isKindOfClass:[AIRGoogleMapPolygon class]]) {
     AIRGoogleMapPolygon *polygon = (AIRGoogleMapPolygon*)subview;
@@ -297,10 +297,10 @@ id regionAsJSON(MKCoordinateRegion region) {
 
   CGPoint boundsTopLeftPoint = CGPointMake([self.projection pointForCoordinate:self.cameraTargetBounds.southWest].x, [self.projection pointForCoordinate:self.cameraTargetBounds.northEast].y);
   CGPoint boundsBottomRightPoint = CGPointMake([self.projection pointForCoordinate:self.cameraTargetBounds.northEast].x, [self.projection pointForCoordinate:self.cameraTargetBounds.southWest].y);
-  
+
   CLLocationDegrees latitude = position.target.latitude;
   CLLocationDegrees longitude = position.target.longitude;
-  
+
   BOOL resetBounds = false;
 
   // Top
@@ -323,24 +323,23 @@ id regionAsJSON(MKCoordinateRegion region) {
     resetBounds = true;
     longitude = [self.projection coordinateForPoint:CGPointMake(boundsBottomRightPoint.x - self.bounds.size.width/2, 0)].longitude;
   }
-  
+
   CLLocationCoordinate2D targetCoord = CLLocationCoordinate2DMake(latitude, longitude);
 
   // If resetting bounds will cause the map to still be out of bounds,
-  // do not do anything to prevent an infinite loop
+  // peg to top left to prevent an infinite loop
   if(resetBounds == true) {
     CGPoint targetPoint = [self.projection pointForCoordinate:targetCoord];
     CGPoint targetTopLeftPoint = CGPointMake(targetPoint.x - self.bounds.size.width / 2, targetPoint.y - mapVisibleHeight / 2);
     CGPoint targetBottomRightPoint = CGPointMake(targetPoint.x + self.bounds.size.width / 2, targetPoint.y + mapVisibleHeight / 2);
 
-    if (targetTopLeftPoint.y < boundsTopLeftPoint.y) {
-      resetBounds = false;
+    if(targetTopLeftPoint.y < boundsTopLeftPoint.y || targetBottomRightPoint.y > boundsBottomRightPoint.y) {
+      latitude = [self.projection coordinateForPoint:CGPointMake(0, boundsTopLeftPoint.y + self.bounds.size.height/2)].latitude;
+      longitude = [self.projection coordinateForPoint:CGPointMake(boundsTopLeftPoint.x + self.bounds.size.width/2, 0)].longitude;
     }
-    if (targetBottomRightPoint.y > boundsBottomRightPoint.y) {
-      resetBounds = false;
-    }
+
   }
-  
+
   if(resetBounds == true) {
     [self animateToLocation:CLLocationCoordinate2DMake(latitude, longitude)];
   }
@@ -373,7 +372,7 @@ id regionAsJSON(MKCoordinateRegion region) {
                @"region": regionAsJSON([AIRGoogleMap makeGMSCameraPositionFromMap:self andGMSCameraPosition:position]),
                @"zoom": [NSNumber numberWithFloat:self.camera.zoom],
                };
-  
+
   [self layoutMarkers];
   if (self.onChange) self.onChange(event);  // complete
 }
@@ -429,7 +428,7 @@ id regionAsJSON(MKCoordinateRegion region) {
       return @"automatic";
     case kGMSMapViewPaddingAdjustmentBehaviorAlways:
       return @"always";
-      
+
     default:
       return @"unknown";
   }

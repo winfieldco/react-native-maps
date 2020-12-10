@@ -393,18 +393,15 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
           LatLng targetCoord = new LatLng(latitude, longitude);
 
           // If resetting bounds will cause the map to still be out of bounds,
-          // do not do anything to prevent an infinite loop
+          // peg to top left to prevent an infinite loop
           if(resetBounds == true) {
 
             Point targetPoint = map.getProjection().toScreenLocation(targetCoord);
             Point targetTopLeftPoint = new Point(targetPoint.x - getWidth() / 2, targetPoint.y - mapVisibleHeight / 2);
             Point targetBottomRightPoint = new Point(targetPoint.x + getWidth() / 2, targetPoint.y + mapVisibleHeight / 2);
 
-            if (targetTopLeftPoint.y < boundsTopLeftPoint.y) {
-              resetBounds = false;
-            }
-            if (targetBottomRightPoint.y > boundsBottomRightPoint.y) {
-              resetBounds = false;
+            if(targetTopLeftPoint.y < boundsTopLeftPoint.y || targetBottomRightPoint.y > boundsBottomRightPoint.y) {
+              targetCoord = new LatLng(map.getProjection().fromScreenLocation(new Point(0, boundsTopLeftPoint.y + getHeight()/2)).latitude, map.getProjection().fromScreenLocation(new Point(boundsTopLeftPoint.x + getWidth()/2, 0)).longitude);
             }
 
           }
@@ -828,12 +825,12 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
     if (addedPosition) {
       LatLngBounds bounds = builder.build();
       CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, baseMapPadding);
-      
+
       if (edgePadding != null) {
         map.setPadding(edgePadding.getInt("left"), edgePadding.getInt("top"),
           edgePadding.getInt("right"), edgePadding.getInt("bottom"));
-      }   
-      
+      }
+
       if (animated) {
         map.animateCamera(cu);
       } else {
@@ -1227,13 +1224,13 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
       indoorBuilding.putArray("levels", levelsArray);
       indoorBuilding.putInt("activeLevelIndex", 0);
       indoorBuilding.putBoolean("underground", false);
-      
+
       event.putMap("IndoorBuilding", indoorBuilding);
 
       manager.pushEvent(context, this, "onIndoorBuildingFocused", event);
     }
   }
-  
+
   @Override
   public void onIndoorLevelActivated(IndoorBuilding building) {
 
@@ -1258,7 +1255,7 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
 
     manager.pushEvent(context, this, "onIndoorLevelActivated", event);
   }
-    
+
   public void setIndoorActiveLevelIndex(int activeLevelIndex) {
     IndoorBuilding building = this.map.getFocusedBuilding();
     if (building != null) {
